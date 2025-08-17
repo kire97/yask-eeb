@@ -1,12 +1,12 @@
 # yask-eeb
 
-A Clojure library designed to ... well, that part is up to you.
+Yet Another Split K-eyboard.
 
 ## Usage
 
-FIXME
+lein run
 
-## License
+# License
 
 Copyright © 2025 FIXME
 
