@@ -145,4 +145,4 @@
   )
 )
 
-(defn -main [dum] 1)
+(defn -main [] 1)
