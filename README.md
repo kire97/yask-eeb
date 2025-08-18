@@ -2,6 +2,12 @@
 
 Yet Another Split K-eyboard.
 
+## Prerequisites
+
+Java
+[Leiningen](https://leiningen.org/)
+[OpenSCAD](https://openscad.org/)
+
 ## Usage
 
 lein run
