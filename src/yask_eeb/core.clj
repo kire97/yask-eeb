@@ -100,10 +100,25 @@
       [z [0 height] y (range 0 length) x (range 0 width)]
       [x y (+ (surface-deform x y) z)]
     )
-    (for ;Create top and bottom faces.
-      [z [0 1] y (range 0 (- length 1)) x (range 0 (- width 1))]
-      (let [idx (+(+ x (* y length)) (* (* width length) z))]
-      [idx (+ idx 1) (+ idx (+ length 1)) (+ idx length)])
+    (concat
+      (for ;Create z axis faces.
+        [z [0 1] y (range 0 (- length 1)) x (range 0 (- width 1))]
+        (let [idx (+(+ x (* y width)) (* (* width length) z))]
+          [idx (+ idx 1) (+ idx (+ width 1)) (+ idx width)]
+        )
+      )
+      (for ;Create y axis faces.
+        [y [0 1] x (range 0 (- width 1))]
+        (let [idx (+(* y (- (* width length) width)) x) z-off (* length width)]
+          [idx (+ idx 1) (+ idx (+ z-off 1)) (+ idx z-off)]
+        )
+      )
+      (for ;Create x axis faces.
+        [x [0 1] y (range 0 (- length 1))]
+        (let [idx (+(* x (- width 1)) (* y width)) z-off (* length width)]
+          [idx (+ idx width) (+ idx (+ z-off width)) (+ idx z-off)]
+        )
+      )
     )
   )
 )
@@ -140,17 +155,7 @@
 
 (spit "scads/test.scad"
   (scad/write-scad 
-    (model/difference
-      (model/translate
-        [(* key-spacing 0.5) key-spacing  0]
-        (model/cube 
-          (+(* key-spacing 2) 8) 
-          (+(* key-spacing 3) 8) 
-          2
-        )
-      )
-      section-ifinger
-    )
+    (create-surface 50 20 2)
   )
 )
 
