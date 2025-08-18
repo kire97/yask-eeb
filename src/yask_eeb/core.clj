@@ -85,12 +85,13 @@
   )
 )
 
-(defn surface-deform 
-  [x y] 
-  (+ 
-    (Math/sin (* x 0.1))
-    (Math/cos (* y 0.1))
-  )
+(defn point-displace 
+  [x y z] 
+  [x y (+ 
+    (Math/sin (* x 0.3))
+    (Math/cos (* y 0.2))
+    z
+  )]
 )
 
 (defn create-surface 
@@ -98,7 +99,7 @@
   (model/polyhedron
     (for ;Create points.
       [z [0 height] y (range 0 length) x (range 0 width)]
-      [x y (+ (surface-deform x y) z)]
+      (point-displace x y z)
     )
     (concat
       (for ;Create z axis faces.
@@ -136,10 +137,28 @@
   )
 )
 
+(defn create-cols 
+  [rows]
+  (model/union
+    (doseq 
+      [[i row-cnt] (map-indexed vector rows)]
+      (model/union
+        (for 
+          [row (range 0 row-cnt)]
+          (model/translate
+            [(* i key-spacing) (* row key-spacing) 0]
+            switch-cutter
+          )
+        )
+      )
+    )    
+  )
+)
+
 (def section-ifinger (finger-section 2 3))
-(def section-lfinger)
-(def section-rfinger)
-(def section-pfinger)
+(def section-lfinger (finger-section 1 4))
+(def section-rfinger (finger-section 1 4))
+(def section-pfinger (finger-section 2 3))
 
 (spit "scads/housing.scad"
   (scad/write-scad housing)
@@ -155,7 +174,8 @@
 
 (spit "scads/test.scad"
   (scad/write-scad 
-    (create-surface 50 20 2)
+      ;(create-surface 50 20 2)
+      (create-cols [4 4 4 4 3 2])
   )
 )
 
