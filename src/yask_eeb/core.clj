@@ -1,6 +1,8 @@
 (ns yask-eeb.core
   (:require [scad-clj.scad :as scad] [scad-clj.model :as model]))
 
+(def key-spacing 18)
+
 (def mx-nib
   (model/translate
     [0 0 -1.5]
@@ -54,7 +56,7 @@
       (model/cube 14 14 1)
     )
     (model/translate
-      [0 0 -3]
+      [0 0 -3.5]
       (model/cube 15 14 5)
     )
     (model/translate
@@ -69,7 +71,7 @@
     (for 
       [index (range 0 6)] 
       (model/translate
-        [(* index 16) 0 0]
+        [(* index key-spacing) 0 0]
         switch-cutter
       ) 
     )
@@ -94,11 +96,11 @@
 (defn create-surface 
   [width length height]
   (model/polyhedron
-    (for 
+    (for ;Create points.
       [z [0 height] y (range 0 length) x (range 0 width)]
       [x y (+ (surface-deform x y) z)]
     )
-    (for 
+    (for ;Create top and bottom faces.
       [z [0 1] y (range 0 (- length 1)) x (range 0 (- width 1))]
       (let [idx (+(+ x (* y length)) (* (* width length) z))]
       [idx (+ idx 1) (+ idx (+ length 1)) (+ idx length)])
@@ -112,17 +114,14 @@
     (for 
       [col (range 0 col-cnt) row (range 0 row-cnt)]
       (model/translate
-        [(* col 16) (* row 16) (* (Math/sin (+ Math/PI (* row  0.2))) 20)]
-        (model/rotate
-          [(* row (model/deg->rad 5)) (* col (model/deg->rad 4)) 0]
-          switch-cutter
-        )
+        [(* col key-spacing) (* row key-spacing) 0]
+        switch-cutter
       )
     )
   )
 )
 
-(def section-ifinger (finger-section 1 4))
+(def section-ifinger (finger-section 2 3))
 (def section-lfinger)
 (def section-rfinger)
 (def section-pfinger)
@@ -141,7 +140,17 @@
 
 (spit "scads/test.scad"
   (scad/write-scad 
-    (create-surface 20 50 2)
+    (model/difference
+      (model/translate
+        [(* key-spacing 0.5) key-spacing  0]
+        (model/cube 
+          (+(* key-spacing 2) 8) 
+          (+(* key-spacing 3) 8) 
+          2
+        )
+      )
+      section-ifinger
+    )
   )
 )
 
