@@ -85,11 +85,22 @@
   )
 )
 
+(defn slope 
+  [axis offset steepness] 
+  (Math/clamp
+    (Math/cbrt (* (- axis offset) steepness)) 
+    -1.0 
+    1.0
+  )
+)
+
 (defn point-displace 
   [x y z] 
   [x y (+ 
-    (Math/sin (* x 0.3))
-    (Math/cos (* y 0.2))
+    (Math/pow (* x 0.07) 2)
+    (Math/pow (* y 0.05) 2)
+    (slope (+ x (* y 0.2)) 5 0.25)
+    (- 1 (slope x 20 0.25))
     z
   )]
 )
@@ -109,14 +120,14 @@
         )
       )
       (for ;Create y axis faces.
-        [y [0 1] x (range 0 (- width 1))]
-        (let [idx (+(* y (- (* width length) width)) x) z-off (* length width)]
+        [z [0 1] x (range 0 (- width 1))]
+        (let [idx (+(* z (- (* width length) width)) x) z-off (* length width)]
           [idx (+ idx 1) (+ idx (+ z-off 1)) (+ idx z-off)]
         )
       )
       (for ;Create x axis faces.
-        [x [0 1] y (range 0 (- length 1))]
-        (let [idx (+(* x (- width 1)) (* y width)) z-off (* length width)]
+        [z [0 1] y (range 0 (- length 1))]
+        (let [idx (+(* z (- width 1)) (* y width)) z-off (* length width)]
           [idx (+ idx width) (+ idx (+ z-off width)) (+ idx z-off)]
         )
       )
@@ -139,20 +150,18 @@
 
 (defn create-cols 
   [rows]
-  (model/union
-    (doseq 
-      [[i row-cnt] (map-indexed vector rows)]
-      (model/union
-        (for 
-          [row (range 0 row-cnt)]
-          (model/translate
-            [(* i key-spacing) (* row key-spacing) 0]
-            switch-cutter
-          )
+  (for 
+    [[i row-cnt] (map-indexed vector rows)]
+    (for 
+      [row (range 0 row-cnt)]
+      (let [x (* i key-spacing) y (* row key-spacing)]
+        (model/translate
+          (point-displace x y 0)
+          switch-cutter
         )
       )
-    )    
-  )
+    )
+  )    
 )
 
 (def section-ifinger (finger-section 2 3))
@@ -174,8 +183,10 @@
 
 (spit "scads/test.scad"
   (scad/write-scad 
-      ;(create-surface 50 20 2)
+    (model/difference
+      (create-surface 100 70 5)
       (create-cols [4 4 4 4 3 2])
+    )
   )
 )
 
