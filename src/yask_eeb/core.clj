@@ -105,30 +105,37 @@
   )]
 )
 
+(defn face-looper
+  [idx off-1 off-2] 
+  [idx (+ idx off-1) (+ idx (+ off-1 off-2)) (+ idx off-2)]
+)
+
 (defn create-surface 
-  [width length height]
+  [x-start y-start width length height]
   (model/polyhedron
     (for ;Create points.
       [z [0 height] y (range 0 length) x (range 0 width)]
-      (point-displace x y z)
+      [(+ x x-start) (+ y y-start) z]
+      ;(point-displace (+ x x-start) (+ y y-start) z)
     )
     (concat
       (for ;Create z axis faces.
-        [z [0 1] y (range 0 (- length 1)) x (range 0 (- width 1))]
-        (let [idx (+(+ x (* y width)) (* (* width length) z))]
-          [idx (+ idx 1) (+ idx (+ width 1)) (+ idx width)]
+        [y (range 0 (- length 1)) x (range 0 (- width 1))]
+        (let [idx (+(+ x (* y width))) z-off (* length width)]
+          (face-looper idx 1 width) 
+          (face-looper (+ idx z-off) width 1)
         )
       )
       (for ;Create y axis faces.
         [z [0 1] x (range 0 (- width 1))]
         (let [idx (+(* z (- (* width length) width)) x) z-off (* length width)]
-          [idx (+ idx 1) (+ idx (+ z-off 1)) (+ idx z-off)]
+          (face-looper idx z-off 1)
         )
       )
       (for ;Create x axis faces.
         [z [0 1] y (range 0 (- length 1))]
         (let [idx (+(* z (- width 1)) (* y width)) z-off (* length width)]
-          [idx (+ idx width) (+ idx (+ z-off width)) (+ idx z-off)]
+          [(face-looper idx width z-off)]
         )
       )
     )
@@ -184,8 +191,8 @@
 (spit "scads/test.scad"
   (scad/write-scad 
     (model/difference
-      (create-surface 100 70 5)
-      (create-cols [4 4 4 4 3 2])
+      (create-surface -1 -1 3 2 2)
+      ;(create-cols [1])
     )
   )
 )
