@@ -167,23 +167,51 @@
   )
 )
 
-(defn create-cols 
+(defn get-switch-positions
   [[x-off y-off z-off] columns]
-  (for 
-    [[i [row-cnt row-off]] (map-indexed vector columns)]
+  (into [] cat (concat
     (for 
-      [row (range 0 row-cnt)]
-      (let [x (+(* i key-spacing) x-off) y (+(+(* row key-spacing) row-off) y-off)]
-        (model/translate
-          (point-displace x y z-off)
-          (model/rotate
-            (get-point-rotation point-displace x y z-off 0.1)
-            switch-cutter
+      [[i [row-cnt row-off]] (map-indexed vector columns)]
+      (for 
+        [row (range 0 row-cnt)]
+        [(+(* i key-spacing) x-off) (+(+(* row key-spacing) row-off) y-off) z-off]
+      )
+    )    
+  ))
+)
+
+(defn create-switches 
+  [positions]
+  (for 
+    [[x y z] positions]
+    (model/translate
+      (point-displace x y z)
+      (model/rotate
+        (get-point-rotation point-displace x y z 0.1)
+        switch-cutter
+      )
+    )
+  )    
+)
+
+(defn create-outline
+  [positions]
+  (model/extrude-linear
+    {:height 20}
+    (model/offset
+      5
+      (model/hull
+        (for 
+          [[x y z] positions]
+          (model/translate [x y] 
+            (let [w (- key-spacing 5)]
+              (model/square w w)
+            )
           )
         )
       )
     )
-  )    
+  )
 )
 
 (def section-ifinger (finger-section 2 3))
@@ -205,9 +233,16 @@
 
 (spit "scads/test.scad"
   (scad/write-scad 
-    (model/difference
-      (create-surface -16 -10 120 80 5)
-      (create-cols [0 0 5] [[4 0] [4 5] [4 2] [4 0] [3 0] [2 0]])
+    (model/fs! 0.5)
+    (model/fa! 2)
+    (let [positions (get-switch-positions [0 0 3] [[4 0] [4 0] [4 5] [4 2] [3 0] [2 0]])]
+      (model/difference
+        (model/intersection
+          (create-surface -16 -20 120 90 3)
+          (create-outline positions)
+        )
+        (create-switches positions)
+      )
     )
   )
 )
