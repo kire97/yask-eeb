@@ -97,13 +97,25 @@
 (defn point-displace 
   [x y z] 
   [x y (+ 
-    (Math/pow (* x 0.07) 2)
+    (* (Math/pow (* x 0.05) 2) -1)
     (Math/pow (* y 0.05) 2)
-    (slope (+ x (* y 0.2)) 5 0.25)
-    (- 1 (slope x 20 0.25))
+    ; (slope (+ x (* y 0.2)) 5 0.25)
+    ; (- 1 (slope x 20 0.25))
     z
   )]
 )
+
+(defn get-point-rotation ;Sample neigbouring points to calculate normal angle.
+  [func x y z w]
+  (let [[x0 y0 z0] (func x y z) [x1 y1 z1] (func (+ x w) y z) [x2 y2 z2] (func x (+ y w) z)]
+    [
+      (+ (Math/atan(/ w (- z0 z2))) (/ Math/PI 2)) 
+      (+ (Math/atan(/ w (- z1 z0))) (/ Math/PI 2)) 
+      0
+    ]
+  )
+)
+
 
 (defn face-looper ;Creates quad face loop.
   [idx off-1 off-2] 
@@ -156,15 +168,18 @@
 )
 
 (defn create-cols 
-  [rows]
+  [[x-off y-off z-off] columns]
   (for 
-    [[i row-cnt] (map-indexed vector rows)]
+    [[i [row-cnt row-off]] (map-indexed vector columns)]
     (for 
       [row (range 0 row-cnt)]
-      (let [x (* i key-spacing) y (* row key-spacing)]
+      (let [x (+(* i key-spacing) x-off) y (+(+(* row key-spacing) row-off) y-off)]
         (model/translate
-          (point-displace x y 0)
-          switch-cutter
+          (point-displace x y z-off)
+          (model/rotate
+            (get-point-rotation point-displace x y z-off 0.1)
+            switch-cutter
+          )
         )
       )
     )
@@ -191,8 +206,8 @@
 (spit "scads/test.scad"
   (scad/write-scad 
     (model/difference
-      (create-surface -1 -1 4 2 2)
-      ;(create-cols [1])
+      (create-surface -16 -10 120 80 5)
+      (create-cols [0 0 5] [[4 0] [4 5] [4 2] [4 0] [3 0] [2 0]])
     )
   )
 )
