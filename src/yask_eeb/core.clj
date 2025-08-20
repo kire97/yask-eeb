@@ -97,8 +97,8 @@
 (defn point-displace 
   [x y z] 
   [x y (+ 
-    (* (Math/pow (* x 0.05) 2) -1)
-    (Math/pow (* y 0.05) 2)
+    (* (Math/pow (* (+ x -50) 0.05) 2) -1)
+    (Math/pow (* (+ y -25) 0.05) 2)
     ; (slope (+ x (* y 0.2)) 5 0.25)
     ; (- 1 (slope x 20 0.25))
     z
@@ -109,8 +109,8 @@
   [func x y z w]
   (let [[x0 y0 z0] (func x y z) [x1 y1 z1] (func (+ x w) y z) [x2 y2 z2] (func x (+ y w) z)]
     [
-      (+ (Math/atan(/ w (- z0 z2))) (/ Math/PI 2)) 
-      (+ (Math/atan(/ w (- z1 z0))) (/ Math/PI 2)) 
+      (Math/atan(/ (- z2 z0) w))
+      (Math/atan(/ (- z0 z1) w))
       0
     ]
   )
