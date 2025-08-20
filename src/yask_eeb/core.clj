@@ -105,12 +105,12 @@
   )]
 )
 
-(defn face-looper
+(defn face-looper ;Creates quad face loop.
   [idx off-1 off-2] 
   [idx (+ idx off-1) (+ idx (+ off-1 off-2)) (+ idx off-2)]
 )
 
-(defn mirror-looper
+(defn mirror-looper ;Creates mirrored pair of quad loops.
   [idx off-1 off-2 off-3]
   [
     (face-looper idx off-1 off-2)
@@ -123,29 +123,22 @@
   (model/polyhedron
     (for ;Create points.
       [z [0 height] y (range 0 length) x (range 0 width)]
-      [(+ x x-start) (+ y y-start) z]
-      ;(point-displace (+ x x-start) (+ y y-start) z)
+      (point-displace (+ x x-start) (+ y y-start) z)
     )
-    (concat
+    (into [] cat (concat ;Feels like there is a better method for this.
       (for ;Create z axis faces.
         [y (range 0 (- length 1)) x (range 0 (- width 1))]
-        (let [idx (+(+ x (* y width))) z-off (* length width)]
-          (mirror-looper idx 1 width z-off) 
-        )
+        (mirror-looper (+(+ x (* y width))) 1 width (* length width)) 
       )
       (for ;Create y axis faces.
-        [z [0 1] x (range 0 (- width 1))]
-        (let [idx (+(* z (- (* width length) width)) x) z-off (* length width)]
-          [(face-looper idx z-off 1)]
-        )
+        [x (range 0 (- width 1))]
+        (mirror-looper x (* length width) 1 (- (* width length) width))
       )
       (for ;Create x axis faces.
-        [z [0 1] y (range 0 (- length 1))]
-        (let [idx (+(* z (- width 1)) (* y width)) z-off (* length width)]
-          [(face-looper idx width z-off)]
-        )
+        [y (range 0 (- length 1))]
+        (mirror-looper (* y width) width (* length width) (- width 1))
       )
-    )
+    ))
   )
 )
 
@@ -198,7 +191,7 @@
 (spit "scads/test.scad"
   (scad/write-scad 
     (model/difference
-      (create-surface -1 -1 3 2 2)
+      (create-surface -1 -1 4 2 2)
       ;(create-cols [1])
     )
   )
