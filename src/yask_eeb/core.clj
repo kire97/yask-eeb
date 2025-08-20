@@ -110,6 +110,14 @@
   [idx (+ idx off-1) (+ idx (+ off-1 off-2)) (+ idx off-2)]
 )
 
+(defn mirror-looper
+  [idx off-1 off-2 off-3]
+  [
+    (face-looper idx off-1 off-2)
+    (face-looper (+ idx off-3) off-2 off-1)
+  ]
+)
+
 (defn create-surface 
   [x-start y-start width length height]
   (model/polyhedron
@@ -122,14 +130,13 @@
       (for ;Create z axis faces.
         [y (range 0 (- length 1)) x (range 0 (- width 1))]
         (let [idx (+(+ x (* y width))) z-off (* length width)]
-          (face-looper idx 1 width) 
-          (face-looper (+ idx z-off) width 1)
+          (mirror-looper idx 1 width z-off) 
         )
       )
       (for ;Create y axis faces.
         [z [0 1] x (range 0 (- width 1))]
         (let [idx (+(* z (- (* width length) width)) x) z-off (* length width)]
-          (face-looper idx z-off 1)
+          [(face-looper idx z-off 1)]
         )
       )
       (for ;Create x axis faces.
