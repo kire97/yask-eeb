@@ -1,7 +1,7 @@
 (ns yask-eeb.core
   (:require [scad-clj.scad :as scad] [scad-clj.model :as model]))
 
-(def key-spacing 18)
+(def key-spacing 19.05)
 
 (def mx-nib
   (model/translate
@@ -97,8 +97,8 @@
 (defn point-displace 
   [x y z] 
   [x y (+ 
-    (* (Math/pow (* (+ x -50) 0.05) 2) -1)
-    (Math/pow (* (+ y -25) 0.05) 2)
+    (* (Math/pow (* (+ x -50) 0.05) 2) 1)
+    (* (Math/pow (* (+ y -25) 0.05) 2) 1)
     ; (slope (+ x (* y 0.2)) 5 0.25)
     ; (- 1 (slope x 20 0.25))
     z
@@ -197,7 +197,7 @@
 (defn create-outline
   [positions]
   (model/extrude-linear
-    {:height 20}
+    {:height 50}
     (model/offset
       5
       (model/hull
@@ -238,7 +238,7 @@
     (let [positions (get-switch-positions [0 0 3] [[4 0] [4 0] [4 5] [4 2] [3 0] [2 0]])]
       (model/difference
         (model/intersection
-          (create-surface -16 -20 120 90 3)
+          (create-surface -16 -20 150 120 3)
           (create-outline positions)
         )
         (create-switches positions)
