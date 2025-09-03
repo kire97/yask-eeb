@@ -94,13 +94,22 @@
   )
 )
 
-(defn point-displace 
+(defn main-displacement 
   [x y z] 
   [x y (+ 
     (* (Math/pow (* (+ x -50) 0.05) 2) 1)
     (* (Math/pow (* (+ y -25) 0.05) 2) 1)
     ; (slope (+ x (* y 0.2)) 5 0.25)
     ; (- 1 (slope x 20 0.25))
+    z
+  )]
+)
+
+(defn thumb-displacement 
+  [x y z] 
+  [x y (+ 
+    (* (Math/pow (* (+ x -50) 0.05) 2) 1)
+    (* (Math/pow (* (+ y -25) 0.05) 2) 1)
     z
   )]
 )
@@ -131,11 +140,11 @@
 )
 
 (defn create-surface 
-  [x-start y-start width length height]
+  [displace x-start y-start width length height]
   (model/polyhedron
     (for ;Create points.
       [z [0 height] y (range 0 length) x (range 0 width)]
-      (point-displace (+ x x-start) (+ y y-start) z)
+      (displace (+ x x-start) (+ y y-start) z)
     )
     (into [] cat (concat ;Feels like there is a better method for this.
       (for ;Create z axis faces.
@@ -180,14 +189,27 @@
   ))
 )
 
+(defn get-switch-positions-x-curved
+  [[x-off y-off z-off] columns]
+  (into [] cat (concat
+    (for
+      [[i [row-cnt row-off]] (map-indexed vector columns)]
+      (for
+        [row (range 0 row-cnt)]
+        [(+(* i key-spacing) x-off) (+(+(* row key-spacing) row-off) y-off) z-off]
+      )
+    )
+  ))
+)
+
 (defn create-switches 
-  [positions]
+  [displace positions]
   (for 
     [[x y z] positions]
     (model/translate
-      (point-displace x y z)
+      (displace x y z)
       (model/rotate
-        (get-point-rotation point-displace x y z 0.1)
+        (get-point-rotation displace x y z 0.1)
         switch-cutter
       )
     )
@@ -195,11 +217,11 @@
 )
 
 (defn create-outline
-  [positions]
+  [positions radius]
   (model/extrude-linear
     {:height 50}
     (model/offset
-      5
+      radius
       (model/hull
         (for 
           [[x y z] positions]
@@ -214,15 +236,6 @@
   )
 )
 
-(def section-ifinger (finger-section 2 3))
-(def section-lfinger (finger-section 1 4))
-(def section-rfinger (finger-section 1 4))
-(def section-pfinger (finger-section 2 3))
-
-(spit "scads/housing.scad"
-  (scad/write-scad housing)
-)
-
 (spit "scads/kcap.scad"
   (scad/write-scad 
     (model/fs! 0.5)
@@ -231,17 +244,54 @@
   )
 )
 
+(def switch-positions (get-switch-positions [0 0 3] [[4 0] [4 0] [4 5] [4 2] [3 0] [2 0]]))
+
 (spit "scads/test.scad"
   (scad/write-scad 
     (model/fs! 0.5)
     (model/fa! 2)
-    (let [positions (get-switch-positions [0 0 3] [[4 0] [4 0] [4 5] [4 2] [3 0] [2 0]])]
+    (model/difference
+      (model/intersection
+        (create-surface main-displacement -16 -20 150 120 3)
+        (create-outline switch-positions 5)
+      )
+      (create-switches main-displacement switch-positions)
+    )
+  )
+)
+
+(spit "scads/test_housing.scad"
+  (scad/write-scad
+    (let [surface (create-surface main-displacement -20 -20 150 120 30)]
+      (model/difference
+        (create-outline switch-positions 10)
+        surface
+        (model/intersection
+          (model/union
+            (create-outline switch-positions 3)
+            (model/translate
+              [0 0 -3]
+              surface
+            )
+          )
+          (create-outline switch-positions 5)
+        )
+      )
+    )
+  )
+)
+
+(spit "scads/test2.scad"
+  (scad/write-scad 
+    (model/fs! 0.5)
+    (model/fa! 2)
+    (let [positions (get-switch-positions [0 0 3] [[1 8] [2 0]])]
       (model/difference
         (model/intersection
-          (create-surface -16 -20 150 120 3)
-          (create-outline positions)
+          (create-surface thumb-displacement -16 -20 150 120 3)
+          (create-outline positions 5)
         )
-        (create-switches positions)
+        (create-switches thumb-displacement positions)
       )
     )
   )
